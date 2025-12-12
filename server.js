@@ -3,6 +3,7 @@ require('dotenv').config();
 const express     = require('express');
 const bodyParser  = require('body-parser');
 const cors        = require('cors');
+const helmet      = require('helmet');  // <-- agregar helmet para seguridad
 
 const apiRoutes         = require('./routes/api.js');
 const fccTestingRoutes  = require('./routes/fcctesting.js');
@@ -10,9 +11,22 @@ const runner            = require('./test-runner');
 
 const app = express();
 
+// Seguridad: headers y Content Security Policy
+app.use(helmet());
+app.use(helmet.contentSecurityPolicy({
+  useDefaults: true,
+  directives: {
+    "script-src": ["'self'"],
+    "style-src": ["'self'"],
+    "img-src": ["'self'", "data:"],
+    "connect-src": ["'self'", "https://stock-price-checker-proxy.freecodecamp.rocks/"]
+  }
+}));
+
 app.use('/public', express.static(process.cwd() + '/public'));
 
-app.use(cors({origin: '*'})); //For FCC testing purposes only
+//CORS: para FCC testing
+app.use(cors({origin: '*'}));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -36,7 +50,7 @@ app.use(function(req, res, next) {
     .send('Not Found');
 });
 
-//Start our server and tests!
+//Start server and tests
 const listener = app.listen(process.env.PORT || 3000, function () {
   console.log('Your app is listening on port ' + listener.address().port);
   if(process.env.NODE_ENV==='test') {
