@@ -9,6 +9,7 @@ suite('Functional Tests', function() {
 
   test('Viewing one stock', function(done) {
     chai.request(server)
+      .keepOpen()
       .get('/api/stock-prices')
       .query({ stock: 'GOOG' })
       .end(function(err, res) {
@@ -22,6 +23,7 @@ suite('Functional Tests', function() {
 
   test('Viewing one stock and liking it', function(done) {
     chai.request(server)
+      .keepOpen()
       .get('/api/stock-prices')
       .query({ stock: 'GOOG', like: true })
       .end(function(err, res) {
@@ -33,6 +35,7 @@ suite('Functional Tests', function() {
 
   test('Viewing the same stock and liking it again', function(done) {
     chai.request(server)
+      .keepOpen()
       .get('/api/stock-prices')
       .query({ stock: 'GOOG', like: true })
       .end(function(err, res) {
@@ -44,6 +47,7 @@ suite('Functional Tests', function() {
 
   test('Viewing two stocks', function(done) {
     chai.request(server)
+      .keepOpen()
       .get('/api/stock-prices')
       .query({ stock: ['GOOG', 'MSFT'] })
       .end(function(err, res) {
@@ -57,6 +61,7 @@ suite('Functional Tests', function() {
 
   test('Viewing two stocks and liking them', function(done) {
     chai.request(server)
+      .keepOpen()
       .get('/api/stock-prices')
       .query({ stock: ['GOOG', 'MSFT'], like: true })
       .end(function(err, res) {
