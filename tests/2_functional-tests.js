@@ -14,9 +14,12 @@ suite('Functional Tests', function() {
       .query({ stock: 'GOOG' })
       .end(function(err, res) {
         assert.equal(res.status, 200);
+        assert.isObject(res.body.stockData);
         assert.property(res.body.stockData, 'stock');
         assert.property(res.body.stockData, 'price');
         assert.property(res.body.stockData, 'likes');
+        assert.isNumber(res.body.stockData.price);
+        assert.isNumber(res.body.stockData.likes);
         done();
       });
   });
@@ -28,7 +31,9 @@ suite('Functional Tests', function() {
       .query({ stock: 'GOOG', like: true })
       .end(function(err, res) {
         assert.equal(res.status, 200);
+        assert.isObject(res.body.stockData);
         assert.property(res.body.stockData, 'likes');
+        assert.isNumber(res.body.stockData.likes);
         done();
       });
   });
@@ -40,7 +45,11 @@ suite('Functional Tests', function() {
       .query({ stock: 'GOOG', like: true })
       .end(function(err, res) {
         assert.equal(res.status, 200);
-        assert.isAtLeast(res.body.stockData.likes, 1);
+        assert.isObject(res.body.stockData);
+        assert.property(res.body.stockData, 'likes');
+        assert.isNumber(res.body.stockData.likes);
+        // FCC espera que no aumente más de 1 like por IP
+        assert.isAtMost(res.body.stockData.likes, 1);
         done();
       });
   });
@@ -53,8 +62,11 @@ suite('Functional Tests', function() {
       .end(function(err, res) {
         assert.equal(res.status, 200);
         assert.isArray(res.body.stockData);
+        assert.lengthOf(res.body.stockData, 2);
         assert.property(res.body.stockData[0], 'rel_likes');
         assert.property(res.body.stockData[1], 'rel_likes');
+        assert.isNumber(res.body.stockData[0].rel_likes);
+        assert.isNumber(res.body.stockData[1].rel_likes);
         done();
       });
   });
@@ -67,8 +79,11 @@ suite('Functional Tests', function() {
       .end(function(err, res) {
         assert.equal(res.status, 200);
         assert.isArray(res.body.stockData);
+        assert.lengthOf(res.body.stockData, 2);
         assert.property(res.body.stockData[0], 'rel_likes');
         assert.property(res.body.stockData[1], 'rel_likes');
+        assert.isNumber(res.body.stockData[0].rel_likes);
+        assert.isNumber(res.body.stockData[1].rel_likes);
         done();
       });
   });
