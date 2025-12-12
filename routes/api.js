@@ -6,6 +6,7 @@ const crypto = require('crypto');
 // Base de datos en memoria para likes
 const stockDB = {};
 
+// Función para anonimizar IP
 function anonymizeIP(ip) {
   return crypto.createHash('sha256').update(ip).digest('hex');
 }
@@ -18,15 +19,15 @@ module.exports = function (app) {
 
         if (!stock) return res.status(400).json({ error: 'Stock symbol required' });
 
-        const ipHash = anonymizeIP(req.ip);
-        const multiple = Array.isArray(stock);
+        // Convertir a array si es solo uno
+        if (!Array.isArray(stock)) stock = [stock];
 
-        if (!multiple) stock = [stock];
-
-        // Aseguramos que los stocks estén en mayúsculas
+        // Mantener orden y mayúsculas
         stock = stock.map(s => s.toUpperCase());
 
-        // Obtener info de cada stock
+        const ipHash = anonymizeIP(req.ip);
+
+        // Obtener información de cada stock
         const results = await Promise.all(stock.map(async s => {
           const response = await fetch(`https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/${s}/quote`);
           const data = await response.json();
@@ -48,8 +49,11 @@ module.exports = function (app) {
         }));
 
         // Respuesta según cantidad de stocks
-        if (multiple) {
+        if (results.length === 1) {
+          res.json({ stockData: results[0] });
+        } else if (results.length === 2) {
           const [first, second] = results;
+
           res.json({
             stockData: [
               {
@@ -65,7 +69,7 @@ module.exports = function (app) {
             ]
           });
         } else {
-          res.json({ stockData: results[0] });
+          res.status(400).json({ error: 'Too many stocks provided' });
         }
 
       } catch (err) {
