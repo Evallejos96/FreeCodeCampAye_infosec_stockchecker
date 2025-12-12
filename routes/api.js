@@ -1,23 +1,16 @@
-/*
-*
-*
-*       Complete the API routing below
-*
-*
-*/
-
 'use strict';
 
 const fetch = require('node-fetch');
 const crypto = require('crypto');
-
-let likesDB = {}; // { STOCK: { likes: number, ips: Set() } }
 
 function hashIP(ip) {
   return crypto.createHash('md5').update(ip).digest('hex');
 }
 
 module.exports = function (app) {
+
+  // Mover la "DB" aquí, dentro del módulo
+  const likesDB = {}; // ahora no es global
 
   app.route('/api/stock-prices')
     .get(async (req, res) => {
@@ -29,14 +22,11 @@ module.exports = function (app) {
           return res.json({ error: 'missing stock' });
         }
 
-        // Convertir stock a array siempre
         const stocks = Array.isArray(stock) ? stock : [stock];
-
         const ip = hashIP(req.ip);
 
         const results = await Promise.all(
           stocks.map(async ticker => {
-
             const symbol = ticker.toUpperCase();
 
             const apiRes = await fetch(
@@ -45,7 +35,6 @@ module.exports = function (app) {
 
             const data = await apiRes.json();
 
-            // si el stock no existe, prevenir que reviente
             const price = Number(data.latestPrice) || 0;
 
             if (!likesDB[symbol]) {
@@ -67,27 +56,17 @@ module.exports = function (app) {
           })
         );
 
-        // 1 Stock
         if (results.length === 1) {
           return res.json({ stockData: results[0] });
         }
 
-        // 2 Stocks
         if (results.length === 2) {
           const [a, b] = results;
 
           return res.json({
             stockData: [
-              {
-                stock: a.stock,
-                price: a.price,
-                rel_likes: a.likes - b.likes
-              },
-              {
-                stock: b.stock,
-                price: b.price,
-                rel_likes: b.likes - a.likes
-              }
+              { stock: a.stock, price: a.price, rel_likes: a.likes - b.likes },
+              { stock: b.stock, price: b.price, rel_likes: b.likes - a.likes }
             ]
           });
         }
