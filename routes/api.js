@@ -27,18 +27,10 @@ module.exports = function (app) {
 
         if (!stock) return res.status(400).json({ error: 'Stock symbol required' });
 
-        const ipHash = anonymizeIP(req.ip);
-        const multiple = Array.isArray(stock);
-
-        if (!multiple) stock = [stock];
-        // Convertir a array si es solo uno
+        // Convertir a array si es solo uno y mantener orden
         if (!Array.isArray(stock)) stock = [stock];
-
-        // Aseguramos que los stocks estén en mayúsculas
-        // Mantener orden y mayúsculas
         stock = stock.map(s => s.toUpperCase());
 
-        // Obtener info de cada stock
         const ipHash = anonymizeIP(req.ip);
 
         // Obtener información de cada stock
@@ -46,10 +38,8 @@ module.exports = function (app) {
           const response = await fetch(`https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/${s}/quote`);
           const data = await response.json();
 
-          // Inicializar DB si no existe
           if (!stockDB[s]) stockDB[s] = { likes: 0, likedIPs: new Set() };
 
-          // Contar like solo si no lo hizo esta IP
           if (like === 'true' && !stockDB[s].likedIPs.has(ipHash)) {
             stockDB[s].likes++;
             stockDB[s].likedIPs.add(ipHash);
@@ -63,29 +53,16 @@ module.exports = function (app) {
         }));
 
         // Respuesta según cantidad de stocks
-        if (multiple) {
         if (results.length === 1) {
           res.json({ stockData: results[0] });
         } else if (results.length === 2) {
-          const [first, second] = results;
-
+          const [a, b] = results;
           res.json({
             stockData: [
-              {
-                stock: first.stock,
-                price: first.price,
-                rel_likes: first.likes - second.likes
-              },
-              {
-                stock: second.stock,
-                price: second.price,
-                rel_likes: second.likes - first.likes
-              }
+              { stock: a.stock, price: a.price, rel_likes: a.likes - b.likes },
+              { stock: b.stock, price: b.price, rel_likes: b.likes - a.likes }
             ]
           });
-        } else {
-          res.json({ stockData: results[0] });
-          res.status(400).json({ error: 'Too many stocks provided' });
         }
 
       } catch (err) {
