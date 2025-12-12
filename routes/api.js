@@ -7,27 +7,31 @@ const crypto = require('crypto');
 const stockDB = {};
 
 function anonymizeIP(ip) {
-  // Hash SHA256 de la IP para anonimizar
   return crypto.createHash('sha256').update(ip).digest('hex');
 }
 
 module.exports = function (app) {
-
   app.route('/api/stock-prices')
     .get(async function (req, res) {
       try {
         let { stock, like } = req.query;
+
+        if (!stock) return res.status(400).json({ error: 'Stock symbol required' });
+
         const ipHash = anonymizeIP(req.ip);
         const multiple = Array.isArray(stock);
 
         if (!multiple) stock = [stock];
 
+        // Aseguramos que los stocks estén en mayúsculas
+        stock = stock.map(s => s.toUpperCase());
+
         // Obtener info de cada stock
-        const results = await Promise.all(stock.map(async (s) => {
+        const results = await Promise.all(stock.map(async s => {
           const response = await fetch(`https://stock-price-checker-proxy.freecodecamp.rocks/v1/stock/${s}/quote`);
           const data = await response.json();
 
-          // Inicializar en DB si no existe
+          // Inicializar DB si no existe
           if (!stockDB[s]) stockDB[s] = { likes: 0, likedIPs: new Set() };
 
           // Contar like solo si no lo hizo esta IP
@@ -37,7 +41,7 @@ module.exports = function (app) {
           }
 
           return {
-            stock: s.toUpperCase(),
+            stock: s,
             price: data.latestPrice,
             likes: stockDB[s].likes
           };
@@ -45,11 +49,19 @@ module.exports = function (app) {
 
         // Respuesta según cantidad de stocks
         if (multiple) {
-          const [a, b] = results;
+          const [first, second] = results;
           res.json({
             stockData: [
-              { stock: a.stock, price: a.price, rel_likes: a.likes - b.likes },
-              { stock: b.stock, price: b.price, rel_likes: b.likes - a.likes }
+              {
+                stock: first.stock,
+                price: first.price,
+                rel_likes: first.likes - second.likes
+              },
+              {
+                stock: second.stock,
+                price: second.price,
+                rel_likes: second.likes - first.likes
+              }
             ]
           });
         } else {
